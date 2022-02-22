@@ -1,0 +1,18 @@
+# code linting and formating
+flake8
+black
+bandit
+flake8-sfs
+
+# code unittests
+pytest
+pytest-env
+pytest-pythonpath
+pytest-cov
+pytest-mock
+moto
+moto-ext
+
+# cloudformation
+yamllint
+cfn-lint
