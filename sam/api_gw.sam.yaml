@@ -46,6 +46,16 @@ Resources:
           properties:
             sentence:
               type: string
+        ClusterSentencesModel:
+          $schema: "http://json-schema.org/draft-04/mySchema#"
+          type: object
+          required:
+            - sentences
+          properties:
+            sentences:
+              type: array
+              items:
+                type: string
 
   #===================================================================
   # Lambda functions
@@ -59,9 +69,30 @@ Resources:
           Type: Api
           Properties:
             Path: /sentence_embedding
-            Method: POST
+            Method: GET
             RestApiId: !Ref ApiGatewayApi
             RequestModel:
               Model: SentenceEmbeddingModel
+              Required: true
+              ValidateBody: true
+            RequestParameters:
+              - method.request.querystring.sentence:
+                  Required: true
+                  Caching: false
+
+
+  ClusterSentences:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: api_gw.cluster_sentences.lambda_handler
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /cluster_sentences
+            Method: POST
+            RestApiId: !Ref ApiGatewayApi
+            RequestModel:
+              Model: ClusterSentencesModel
               Required: true
               ValidateBody: true
