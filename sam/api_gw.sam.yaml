@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  StageName:
+    Type: String
+    Description: Deployment stage
+    Default: test
+
+  # CertificateArn:
+  #   Type: String
+  #   Description: Arn of the network certificate
+  #
+  # HostedZoneId:
+  #   Type: String
+  #   Description: Hosted zone id
+  #
+  # DomainName:
+  #   Type: String
+  #   Description: Parent domain name
+
+Globals:
+  Function:
+    Runtime: python3.7
+    CodeUri: ../code
+    MemorySize: 128
+    Timeout: 15
+
+Resources:
+
+  #===================================================================
+  # Api gateway
+  #===================================================================
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref StageName
+      Auth:
+        DefaultAuthorizer: AWS_IAM
+      Models:
+        SentenceEmbeddingModel:
+          $schema: "http://json-schema.org/draft-04/mySchema#"
+          type: object
+          required:
+            - sentence
+          properties:
+            sentence:
+              type: string
+
+  #===================================================================
+  # Lambda functions
+  #===================================================================
+  SentenceEmbedding:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: api_gw.sentence_embedding.lambda_handler
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /sentence_embedding
+            Method: POST
+            RestApiId: !Ref ApiGatewayApi
+            RequestModel:
+              Model: SentenceEmbeddingModel
+              Required: true
+              ValidateBody: true

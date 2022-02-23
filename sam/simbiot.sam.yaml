@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+
+  StageName:
+    Type: String
+    Description: Deployment stage
+    Default: test
+
+  # CertificateArn:
+  #   Type: String
+  #   Description: Arn of the network certificate
+  #
+  # DomainName:
+  #   Type: String
+  #   Description: Domain name
+  #
+  # HostedZoneId:
+  #   Type: String
+  #   Description: Hosted zone id
+
+Resources:
+
+  #===================================================================
+  # Request handler stack
+  #===================================================================
+  RequestHandler:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./api_gw.sam.yaml
+      Parameters:
+        StageName: !Ref StageName
+        # CertificateArn: !Ref CertificateArn
+        # DomainName: !Ref DomainName
+        # HostedZoneId: !Ref HostedZoneId
+
+  # TODO: Add event buss handler stack for async mode
+  #===================================================================
+  # Service event publishing
+  #===================================================================
+  ServiceSns:
+    Type: AWS::SNS::Topic
+    Properties: {}
+
+Outputs:
+  ServiceSnsSnsArn:
+    Description: Arn for event sns in the scheduler
+    Value: !Ref ServiceSns
