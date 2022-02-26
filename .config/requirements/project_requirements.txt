@@ -16,3 +16,10 @@ moto-ext
 # cloudformation
 yamllint
 cfn-lint
+
+# work requirements
+numpy
+sagemaker
+nltk
+gensim
+scikit-learn
