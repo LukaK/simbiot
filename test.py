@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from lib import ClusteringModel
+from lib import Clustering
 
 if __name__ == "__main__":
-    clustering = ClusteringModel()
+    clustering = Clustering()
     clustering.initialize()
     clustering.cleanup()

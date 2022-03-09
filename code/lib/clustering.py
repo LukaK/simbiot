@@ -3,17 +3,16 @@ from sagemaker.sklearn import SKLearn
 from sagemaker.serializers import IdentitySerializer
 from sagemaker.deserializers import BytesDeserializer
 from sagemaker.serverless import ServerlessInferenceConfig
-from .model import MyModel, PicklePredictor
+from .model import ModelWrapper, PicklePredictor
 
 
-# TODO: Add logging
 # TODO: Add support for avilable pretrained models
-class ClusteringModel(MyModel):
+class Clustering(ModelWrapper):
     def __init__(self, serverless_mode: bool = False):
         super().__init__()
 
     def _deploy_model(self):
-        print("Deploying clustering model...")
+        self.logger.info("Deploying clustering model")
 
         # deployment configuration
         serverless_config = ServerlessInferenceConfig(
@@ -25,9 +24,10 @@ class ClusteringModel(MyModel):
             serializer=IdentitySerializer(),
             deserializer=BytesDeserializer(),
         )
+        self.logger.info("Model deployment completed successfully")
 
     def _train_model(self):
-        print("Initializing clustering model instance...")
+        self.logger.info("Training clustering model")
         self.model = SKLearn(
             "clustering.py",
             role=self.role_arn,
@@ -38,3 +38,4 @@ class ClusteringModel(MyModel):
             predictor_cls=PicklePredictor,
         )
         self.model.fit()
+        self.logger.info("Clustering model trained successfully")

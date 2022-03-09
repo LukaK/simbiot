@@ -6,11 +6,11 @@ import pathlib
 import sagemaker
 from abc import ABC, abstractmethod
 from sagemaker.predictor import Predictor
+from .logger import Logger
 
 
-# TODO: Add logging
 # TODO: Add role creation if missing
-class MyModel(ABC):
+class ModelWrapper(ABC):
 
     # constants
     role_name = "MySagemakerRole"
@@ -20,6 +20,7 @@ class MyModel(ABC):
     # resources
     sagemaker_session = sagemaker.Session()
     iam_client = boto3.client("iam")
+    logger = Logger.get_logger()
 
     def __init__(self):
         self.model = None
@@ -27,16 +28,22 @@ class MyModel(ABC):
         self.role_arn = self.iam_client.get_role(RoleName=self.role_name)["Role"]["Arn"]
 
     def initialize(self):
+        self.logger.info("Initializing model")
         self._train_model()
         self._deploy_model()
+        self.logger.info("Model initialization completed successfully")
 
     def cleanup(self):
-        print("Cleaning up clustering resources...")
-
+        self.logger.info("Cleaning up resources")
         if self.predictor:
+            self.logger.info("Deleting model resource")
             self.predictor.delete_model()
-            self.predictor.delete_endpoint()
 
+            self.logger.info("Deleting endpoing resource")
+            self.predictor.delete_endpoint()
+        self.logger.info("Cleanup completed successfully")
+
+    # TODO: Test predictions
     def predict(self, data: numpy.ndarray) -> numpy.ndarray:
         payload = pickle.dumps(data)  # nosec
         response = self.predictor.predict(payload)
