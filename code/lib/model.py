@@ -2,6 +2,7 @@
 import boto3
 import numpy
 import pickle  # nosec
+import pathlib
 import sagemaker
 from abc import ABC, abstractmethod
 from sagemaker.predictor import Predictor
@@ -13,6 +14,8 @@ class MyModel(ABC):
 
     # constants
     role_name = "MySagemakerRole"
+    parrent_path = pathlib.Path(__file__).parent
+    entry_path = parrent_path / "model_hosting"
 
     # resources
     sagemaker_session = sagemaker.Session()

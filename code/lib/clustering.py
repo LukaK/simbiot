@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import pathlib
 from sagemaker.sklearn import SKLearn
 from sagemaker.serializers import IdentitySerializer
 from sagemaker.deserializers import BytesDeserializer
@@ -10,11 +9,6 @@ from .model import MyModel, PicklePredictor
 # TODO: Add logging
 # TODO: Add support for avilable pretrained models
 class ClusteringModel(MyModel):
-
-    # constants
-    parrent_path = pathlib.Path(__file__).parent
-    clustering_path = parrent_path / "clustering_model"
-
     def __init__(self, serverless_mode: bool = False):
         super().__init__()
 
@@ -32,14 +26,13 @@ class ClusteringModel(MyModel):
             deserializer=BytesDeserializer(),
         )
 
-    # TODO: role not working
     def _train_model(self):
         print("Initializing clustering model instance...")
         self.model = SKLearn(
-            "train_and_deploy.py",
+            "clustering.py",
             role=self.role_arn,
             instance_type="ml.m5.large",
-            source_dir=str(self.clustering_path),
+            source_dir=str(self.entry_path),
             py_version="py3",
             framework_version="0.23-1",
             predictor_cls=PicklePredictor,
