@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import time
+import json
 import boto3
 import numpy
 import pickle  # nosec
@@ -9,7 +11,6 @@ from sagemaker.predictor import Predictor
 from .logger import Logger
 
 
-# TODO: Add role creation if missing
 class ModelWrapper(ABC):
 
     # constants
@@ -21,11 +22,39 @@ class ModelWrapper(ABC):
     sagemaker_session = sagemaker.Session()
     iam_client = boto3.client("iam")
     logger = Logger.get_logger()
+    trust_policy_document = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {"Service": "sagemaker.amazonaws.com"},
+                "Action": "sts:AssumeRole",
+            }
+        ],
+    }
 
     def __init__(self):
         self.model = None
         self.predictor = None
-        self.role_arn = self.iam_client.get_role(RoleName=self.role_name)["Role"]["Arn"]
+        self.role_arn = self._setup_sagemaker_role()
+
+    @classmethod
+    def _setup_sagemaker_role(cls) -> str:
+        try:
+            role_arn = cls.iam_client.get_role(RoleName=cls.role_name)["Role"]["Arn"]
+        except Exception:
+            cls.logger.info("Creating iam role for the sagemaker.")
+            role_arn = cls.iam_client.create_role(
+                RoleName=cls.role_name,
+                AssumeRolePolicyDocument=json.dumps(cls.trust_policy_document),
+            )["Role"]["Arn"]
+            response = cls.iam_client.attach_role_policy(
+                RoleName=cls.role_name,
+                PolicyArn="arn:aws:iam::aws:policy/AmazonSageMakerFullAccess",
+            )
+            time.sleep(5)
+            cls.logger.info("Iam role created successfully.")
+        return role_arn
 
     def initialize(self):
         self.logger.info("Initializing model")
