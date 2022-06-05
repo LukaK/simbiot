@@ -11,17 +11,18 @@ from sagemaker.predictor import Predictor
 from .logger import Logger
 
 
+# TODO: Add support without training
 class ModelWrapper(ABC):
-
-    # constants
-    role_name = "MySagemakerRole"
-    parrent_path = pathlib.Path(__file__).parent
-    entry_path = parrent_path / "model_hosting"
 
     # resources
     sagemaker_session = sagemaker.Session()
     iam_client = boto3.client("iam")
     logger = Logger.get_logger()
+
+    # constants
+    role_name = "MySagemakerRole"
+    parrent_path = pathlib.Path(__file__).parent
+    entry_path = parrent_path / "model_hosting"
     trust_policy_document = {
         "Version": "2012-10-17",
         "Statement": [
@@ -44,11 +45,15 @@ class ModelWrapper(ABC):
             role_arn = cls.iam_client.get_role(RoleName=cls.role_name)["Role"]["Arn"]
         except Exception:
             cls.logger.info("Creating iam role for the sagemaker.")
+
+            # create role
             role_arn = cls.iam_client.create_role(
                 RoleName=cls.role_name,
                 AssumeRolePolicyDocument=json.dumps(cls.trust_policy_document),
             )["Role"]["Arn"]
-            response = cls.iam_client.attach_role_policy(
+
+            # attach policy
+            cls.iam_client.attach_role_policy(
                 RoleName=cls.role_name,
                 PolicyArn="arn:aws:iam::aws:policy/AmazonSageMakerFullAccess",
             )
@@ -72,11 +77,21 @@ class ModelWrapper(ABC):
             self.predictor.delete_endpoint()
         self.logger.info("Cleanup completed successfully")
 
-    # TODO: Test predictions
     def predict(self, data: numpy.ndarray) -> numpy.ndarray:
+        """Use model for inference
+
+        Args:
+            data (ndarray): mxn array, m datapoints of dimension n
+
+        Returns:
+            ndarray: Inference results
+        """
+
+        self.logger.info(f"Predicting input: {data}")
         payload = pickle.dumps(data)  # nosec
         response = self.predictor.predict(payload)
         predictions = pickle.loads(response)  # nosec
+        self.logger.info(f"Prediction completed successfully: {predictions}")
         return predictions
 
     @abstractmethod

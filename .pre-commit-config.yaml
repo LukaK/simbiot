@@ -2,7 +2,7 @@
 # Install hooks:        pre-commit install
 # Autoupdate versions:  pre-commit autoupdate
 default_language_version:
-  python: python3.7.9
+  python: python3
 
 default_stages: [commit, push]
 fail_fast: true
@@ -10,15 +10,16 @@ fail_fast: true
 repos:
   # string formatting
   - repo: https://github.com/ikamensh/flynt/
-    rev: '0.69'
+    rev: '0.76'
     hooks:
     -   id: flynt
 
   # code formating
   - repo: https://github.com/ambv/black
-    rev: 21.11b1
+    rev: 22.3.0
     hooks:
-    - id: black
+      - id: black
+        # language_version: python3.7
 
   # code linter
   - repo: https://gitlab.com/pycqa/flake8
@@ -30,7 +31,7 @@ repos:
 
   # security checks
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.1
+    rev: 1.7.4
     hooks:
     - id: bandit
       name: bandit
@@ -52,7 +53,7 @@ repos:
 
   # cloudformation linter
   - repo: https://github.com/aws-cloudformation/cfn-python-lint
-    rev: v0.56.2
+    rev: v0.61.0
     hooks:
       - id: cfn-python-lint
         name: cfn-lint
