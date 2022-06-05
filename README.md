@@ -9,4 +9,6 @@ Files:
 - sam: aws cloudformation infrastructure files
 
 ### TODO:
-Add sam templates for api gw interface and for event bus interface.
+* add sentence encoding support,
+* add sam templates for api gw interface and for event bus interface,
+* add async interface support with sqs

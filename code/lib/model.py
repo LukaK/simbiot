@@ -11,7 +11,6 @@ from sagemaker.predictor import Predictor
 from .logger import Logger
 
 
-# TODO: Add support without training
 class ModelWrapper(ABC):
 
     # resources
