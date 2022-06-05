@@ -63,7 +63,7 @@ class ModelWrapper(ABC):
 
     def initialize(self):
         self.logger.info("Initializing model")
-        self._train_model()
+        self._train_or_prepare_model()
         self._deploy_model()
         self.logger.info("Model initialization completed successfully")
 
@@ -95,7 +95,7 @@ class ModelWrapper(ABC):
         return predictions
 
     @abstractmethod
-    def _train_model(self):
+    def _train_or_prepare_model(self):
         pass
 
     @abstractmethod
