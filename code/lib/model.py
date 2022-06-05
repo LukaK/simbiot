@@ -34,9 +34,10 @@ class ModelWrapper(ABC):
         ],
     }
 
-    def __init__(self):
+    def __init__(self, model_location: str = None):
         self.model = None
         self.predictor = None
+        self.model_location = model_location
         self.role_arn = self._setup_sagemaker_role()
 
     @classmethod
@@ -63,7 +64,12 @@ class ModelWrapper(ABC):
 
     def initialize(self):
         self.logger.info("Initializing model")
-        self._train_or_prepare_model()
+
+        if self.model_location:
+            self._use_pretrained_model()
+        else:
+            self._train_model()
+
         self._deploy_model()
         self.logger.info("Model initialization completed successfully")
 
@@ -95,11 +101,15 @@ class ModelWrapper(ABC):
         return predictions
 
     @abstractmethod
-    def _train_or_prepare_model(self):
+    def _train_model(self):
         pass
 
     @abstractmethod
     def _deploy_model(self):
+        pass
+
+    @abstractmethod
+    def _use_pretrained_model(self):
         pass
 
 

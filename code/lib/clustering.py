@@ -1,17 +1,14 @@
 #!/usr/bin/env python
-from sagemaker.sklearn import SKLearn
+from sagemaker.sklearn import SKLearn, SKLearnModel
 from sagemaker.serializers import IdentitySerializer
 from sagemaker.deserializers import BytesDeserializer
 from sagemaker.serverless import ServerlessInferenceConfig
 from .model import ModelWrapper, PicklePredictor
 
 
-# TODO: Test support for pretrained models
-# TODO: Add validation for model location
 class Clustering(ModelWrapper):
-    def __init__(self, model_location: str = None):
-        self._model_location = model_location
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def _deploy_model(self):
         self.logger.info("Deploying clustering model")
@@ -28,10 +25,19 @@ class Clustering(ModelWrapper):
         )
         self.logger.info("Model deployment completed successfully")
 
-    def _train_or_prepare_model(self):
-        self.logger.info("Starting clustering model preparation")
+    def _use_pretrained_model(self):
+        self.logger.info("Configuring pretrained clustering model")
+        self.model = SKLearnModel(
+            model_data=self.model_location,
+            role=self.role_arn,
+            entry_point="clustering.py",
+            source_dir=str(self.entry_path),
+            framework_version="0.23-1",
+        )
+
+    def _train_model(self):
+        self.logger.info("Training clustering model")
         self.model = SKLearn(
-            model_data=self._model_location,
             entry_point="clustering.py",
             role=self.role_arn,
             source_dir=str(self.entry_path),
@@ -41,9 +47,5 @@ class Clustering(ModelWrapper):
             predictor_cls=PicklePredictor,
         )
 
-        # If there is no pretrained model train it
-        if not self._model_location:
-            self.logger.info("Training clustering model")
-            self.model.fit()
-
-        self.logger.info("Model preparation completed successfully")
+        self.model.fit()
+        self.logger.info("Model training completed successfully")
