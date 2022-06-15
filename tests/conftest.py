@@ -4,6 +4,7 @@ import boto3
 import pytest
 from moto import mock_iam
 
+
 @pytest.fixture
 def aws_credentials():
     """Mocked AWS Credentials for moto."""

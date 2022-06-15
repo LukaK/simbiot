@@ -6,11 +6,14 @@ from typing import Dict
 from .logger import logger
 from dataclasses import dataclass, field
 
+
 @dataclass
 class SagemakerRoleConfig:
     name: str
-    policy_arn: str = field(default = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess", init=False)
-    trust_policy_document: Dict[str, str] = field(init = False, default_factory = dict)
+    policy_arn: str = field(
+        default="arn:aws:iam::aws:policy/AmazonSageMakerFullAccess", init=False
+    )
+    trust_policy_document: Dict[str, str] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
         self.trust_policy_document = {
@@ -28,11 +31,12 @@ class SagemakerRoleConfig:
 @dataclass
 class SagemakerRole:
     arn: str
-    name: str = field(init = False)
-    config: SagemakerRoleConfig = field(repr = False)
+    name: str = field(init=False)
+    config: SagemakerRoleConfig = field(repr=False)
 
     def __post_init__(self):
         self.name = self.config.name
+
 
 class RoleHandlerException(Exception):
     def __init__(self, role_config: SagemakerRoleConfig, message: str):
@@ -62,7 +66,7 @@ class RoleHandler:
         cls._logger.info(f"Retrieving role: {role_config.name}")
         role_arn = cls._iam_client.get_role(RoleName=role_config.name)["Role"]["Arn"]
         cls._logger.info("Role retrieved successfully")
-        return SagemakerRole(arn = role_arn, config = role_config)
+        return SagemakerRole(arn=role_arn, config=role_config)
 
     @classmethod
     def _create_role(cls, role_config: SagemakerRoleConfig) -> SagemakerRole:
@@ -96,7 +100,7 @@ class RoleHandler:
         # wait untill role is created
         time.sleep(5)
         cls._logger.info("Role created successfully.")
-        return SagemakerRole(arn = role_arn, config = role_config)
+        return SagemakerRole(arn=role_arn, config=role_config)
 
     @classmethod
     def initialize_role(cls, role_config: SagemakerRoleConfig) -> SagemakerRole:
@@ -118,4 +122,7 @@ class RoleHandler:
             return cls._create_role(role_config)
         except cls._iam_client.exceptions.EntityAlreadyExistsException:
             cls._logger.error("Role already exists")
-            raise RoleHandlerException(role_config = role_config, message = f"Unexpected error during initialization of the role: {role_config}")
+            raise RoleHandlerException(
+                role_config=role_config,
+                message=f"Unexpected error during initialization of the role: {role_config}",
+            )
