@@ -2,6 +2,8 @@
 import pytest
 from moto.core import patch_client
 
+# TODO: remove mark or make it usefull
+
 
 @pytest.mark.role
 def test__sagemaker_role_config_initialization():

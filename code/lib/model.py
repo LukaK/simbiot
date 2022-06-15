@@ -1,115 +1,52 @@
 #!/usr/bin/env python
-import time
-import json
-import boto3
 import numpy
 import pickle  # nosec
-import pathlib
-import sagemaker
-from abc import ABC, abstractmethod
+from .logger import logger
+from dataclasses import dataclass
 from sagemaker.predictor import Predictor
-from .logger import Logger
+from sagemaker.serializers import IdentitySerializer
+from sagemaker.deserializers import BytesDeserializer
+from sagemaker.serverless import ServerlessInferenceConfig
+from .role import RoleHandler, SagemakerRoleConfig
+
+# TODO: change object to Model class
 
 
-class ModelWrapper(ABC):
+@dataclass(frozen=True)
+class DeployedModel:
+    model: object
+    predictor: Predictor
 
-    # resources
-    sagemaker_session = sagemaker.Session()
-    iam_client = boto3.client("iam")
-    logger = Logger.get_logger()
 
-    # constants
-    role_name = "MySagemakerRole"
-    parrent_path = pathlib.Path(__file__).parent
-    entry_path = parrent_path / "model_hosting"
-    trust_policy_document = {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Principal": {"Service": "sagemaker.amazonaws.com"},
-                "Action": "sts:AssumeRole",
-            }
-        ],
-    }
+@dataclass(frozen=True)
+class DeploymentConfiguration:
+    memory: int
+    concurrency: int
 
-    def __init__(self, model_location: str = None):
-        self.model = None
-        self.predictor = None
-        self.model_location = model_location
-        self.role_arn = self._setup_sagemaker_role()
 
-    @classmethod
-    def _setup_sagemaker_role(cls) -> str:
-        try:
-            role_arn = cls.iam_client.get_role(RoleName=cls.role_name)["Role"]["Arn"]
-        except Exception:
-            cls.logger.info("Creating iam role for the sagemaker.")
+@dataclass(frozen=True)
+class TrainingConfiguration:
+    entry_point: str
+    source_dir: str
+    instance_type: str
+    py_version: str
+    framework_version: str
 
-            # create role
-            role_arn = cls.iam_client.create_role(
-                RoleName=cls.role_name,
-                AssumeRolePolicyDocument=json.dumps(cls.trust_policy_document),
-            )["Role"]["Arn"]
 
-            # attach policy
-            cls.iam_client.attach_role_policy(
-                RoleName=cls.role_name,
-                PolicyArn="arn:aws:iam::aws:policy/AmazonSageMakerFullAccess",
-            )
-            time.sleep(5)
-            cls.logger.info("Iam role created successfully.")
-        return role_arn
+@dataclass(frozen=True)
+class PretrainedConfiguration:
+    model_data: str
+    entry_point: str
+    source_dir: str
+    framework_version: str
 
-    def initialize(self):
-        self.logger.info("Initializing model")
 
-        if self.model_location:
-            self._use_pretrained_model()
-        else:
-            self._train_model()
-
-        self._deploy_model()
-        self.logger.info("Model initialization completed successfully")
-
-    def cleanup(self):
-        self.logger.info("Cleaning up resources")
-        if self.predictor:
-            self.logger.info("Deleting model resource")
-            self.predictor.delete_model()
-
-            self.logger.info("Deleting endpoing resource")
-            self.predictor.delete_endpoint()
-        self.logger.info("Cleanup completed successfully")
-
-    def predict(self, data: numpy.ndarray) -> numpy.ndarray:
-        """Use model for inference
-
-        Args:
-            data (ndarray): mxn array, m datapoints of dimension n
-
-        Returns:
-            ndarray: Inference results
-        """
-
-        self.logger.info(f"Predicting input: {data}")
-        payload = pickle.dumps(data)  # nosec
-        response = self.predictor.predict(payload)
-        predictions = pickle.loads(response)  # nosec
-        self.logger.info(f"Prediction completed successfully: {predictions}")
-        return predictions
-
-    @abstractmethod
-    def _train_model(self):
-        pass
-
-    @abstractmethod
-    def _deploy_model(self):
-        pass
-
-    @abstractmethod
-    def _use_pretrained_model(self):
-        pass
+# TODO: Add check if at least one of the deployment methods is defined
+@dataclass(frozen=True)
+class ModelConfiguration:
+    deployment: DeploymentConfiguration
+    training: TrainingConfiguration
+    pretrained: PretrainedConfiguration
 
 
 class PicklePredictor(Predictor):
@@ -117,3 +54,82 @@ class PicklePredictor(Predictor):
         super(PicklePredictor, self).__init__(
             endpoint_name, sagemaker_session, content_type="application/python-pickle"
         )
+
+
+class ModelHandler:
+    _logger = logger
+    _role_handler = RoleHandler()
+
+    def initialize(self, role_name: str = "MySagemakerRole"):
+        self._role = self._role_handler.initialize_role(
+            SagemakerRoleConfig(name=role_name)
+        )
+
+    def _deploy_model(
+        self, model: object, model_configuration: ModelConfiguration
+    ) -> Predictor:
+
+        # deployment configuration
+        serverless_config = ServerlessInferenceConfig(
+            memory_size_in_mb=model_configuration.deployment.memory,
+            max_concurrency=model_configuration.deployment.concurrency,
+        )
+        predictor = model.deploy(
+            serverless_inference_config=serverless_config,
+            serializer=IdentitySerializer(),
+            deserializer=BytesDeserializer(),
+        )
+        return predictor
+
+    def train_and_deploy(
+        self, model_class: object, model_configuration: ModelConfiguration
+    ) -> DeployedModel:
+        self._logger.info(
+            f"Training/deploying clustering model with configuration: {model_configuration}"
+        )
+        model = model_class(
+            entry_point=model_configuration.training.entry_point,
+            role=self._role.arn,
+            source_dir=model_configuration.training.source_dir,
+            instance_type=model_configuration.training.instance_type,
+            py_version=model_configuration.training.py_version,
+            framework_version=model_configuration.training.framework_version,
+            predictor_cls=PicklePredictor,
+        )
+
+        model.fit()
+        predictor = self._deploy_model(model, model_configuration)
+        return DeployedModel(model=model, predictor=predictor)
+
+    def deploy_pretrained(
+        self, model_class: object, model_configuration: ModelConfiguration
+    ) -> DeployedModel:
+
+        self._logger.info(
+            f"Configuring pretrained clustering model: {model_configuration}"
+        )
+        model = model_class(
+            model_data=model_configuration.pretrained.model_location,
+            role=self._role.arn,
+            entry_point=model_configuration.pretrained.entry_point,
+            source_dir=model_configuration.pretrained.source_dir,
+            framework_version=model_configuration.pretrained.framework_version,
+        )
+        predictor = self._deploy_model(model, model_configuration)
+        return DeployedModel(model=model, predictor=predictor)
+
+    def tear_down(self, deployed_model: DeployedModel) -> None:
+        self._logger.info("Tearing down deployed model")
+        deployed_model.predictor.delete_model()
+        deployed_model.predictor.delete_endpoint()
+        self._logger.info("Teardown completed successfully")
+
+    def predict(
+        self, deployed_model: DeployedModel, data: numpy.ndarray
+    ) -> numpy.ndarray:
+        self._logger.info(f"Predicting input: {data}")
+        payload = pickle.dumps(data)  # nosec
+        response = deployed_model.predictor.predict(payload)
+        predictions = pickle.loads(response)  # nosec
+        self._logger.info(f"Prediction completed successfully: {predictions}")
+        return predictions
