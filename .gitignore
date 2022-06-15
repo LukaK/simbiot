@@ -2,3 +2,4 @@
 samconfig.toml
 .python-version
 *joblib
+.coverage
