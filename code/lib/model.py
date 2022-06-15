@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import annotations
 import numpy
 import pickle  # nosec
 from .logger import logger
@@ -13,12 +14,6 @@ from .role import RoleHandler, SagemakerRoleConfig
 
 
 @dataclass(frozen=True)
-class DeployedModel:
-    model: object
-    predictor: Predictor
-
-
-@dataclass(frozen=True)
 class DeploymentConfiguration:
     memory: int
     concurrency: int
@@ -26,6 +21,7 @@ class DeploymentConfiguration:
 
 @dataclass(frozen=True)
 class TrainingConfiguration:
+    model_class: object
     entry_point: str
     source_dir: str
     instance_type: str
@@ -35,18 +31,11 @@ class TrainingConfiguration:
 
 @dataclass(frozen=True)
 class PretrainedConfiguration:
+    model_class: object
     model_data: str
     entry_point: str
     source_dir: str
     framework_version: str
-
-
-# TODO: Add check if at least one of the deployment methods is defined
-@dataclass(frozen=True)
-class ModelConfiguration:
-    deployment: DeploymentConfiguration
-    training: TrainingConfiguration
-    pretrained: PretrainedConfiguration
 
 
 class PicklePredictor(Predictor):
@@ -60,19 +49,23 @@ class ModelHandler:
     _logger = logger
     _role_handler = RoleHandler()
 
-    def initialize(self, role_name: str = "MySagemakerRole"):
-        self._role = self._role_handler.initialize_role(
-            SagemakerRoleConfig(name=role_name)
-        )
+    @staticmethod
+    def create(role_config: SagemakerRoleConfig) -> ModelHandler:
+        model_handler = ModelHandler()
+        model_handler.initialize(role_config)
+        return model_handler
+
+    def initialize(self, role_config: SagemakerRoleConfig) -> None:
+        self._role = self._role_handler.initialize_role(role_config)
 
     def _deploy_model(
-        self, model: object, model_configuration: ModelConfiguration
+        self, model: object, deployment_config: DeploymentConfiguration
     ) -> Predictor:
 
         # deployment configuration
         serverless_config = ServerlessInferenceConfig(
-            memory_size_in_mb=model_configuration.deployment.memory,
-            max_concurrency=model_configuration.deployment.concurrency,
+            memory_size_in_mb=deployment_config.memory,
+            max_concurrency=deployment_config.concurrency,
         )
         predictor = model.deploy(
             serverless_inference_config=serverless_config,
@@ -82,54 +75,49 @@ class ModelHandler:
         return predictor
 
     def train_and_deploy(
-        self, model_class: object, model_configuration: ModelConfiguration
-    ) -> DeployedModel:
-        self._logger.info(
-            f"Training/deploying clustering model with configuration: {model_configuration}"
-        )
-        model = model_class(
-            entry_point=model_configuration.training.entry_point,
+        self,
+        training_config: TrainingConfiguration,
+        deployment_config: DeploymentConfiguration,
+    ) -> Predictor:
+
+        model = training_config.model_class(
+            entry_point=training_config.entry_point,
             role=self._role.arn,
-            source_dir=model_configuration.training.source_dir,
-            instance_type=model_configuration.training.instance_type,
-            py_version=model_configuration.training.py_version,
-            framework_version=model_configuration.training.framework_version,
+            source_dir=training_config.source_dir,
+            instance_type=training_config.instance_type,
+            py_version=training_config.py_version,
+            framework_version=training_config.framework_version,
             predictor_cls=PicklePredictor,
         )
 
         model.fit()
-        predictor = self._deploy_model(model, model_configuration)
-        return DeployedModel(model=model, predictor=predictor)
+        predictor = self._deploy_model(model, deployment_config)
+        return predictor
 
     def deploy_pretrained(
-        self, model_class: object, model_configuration: ModelConfiguration
-    ) -> DeployedModel:
+        self,
+        pretrained_config: PretrainedConfiguration,
+        deployment_config: DeploymentConfiguration,
+    ) -> Predictor:
 
-        self._logger.info(
-            f"Configuring pretrained clustering model: {model_configuration}"
-        )
-        model = model_class(
-            model_data=model_configuration.pretrained.model_location,
+        model = pretrained_config.model_class(
+            model_data=pretrained_config.model_location,
             role=self._role.arn,
-            entry_point=model_configuration.pretrained.entry_point,
-            source_dir=model_configuration.pretrained.source_dir,
-            framework_version=model_configuration.pretrained.framework_version,
+            entry_point=pretrained_config.entry_point,
+            source_dir=pretrained_config.source_dir,
+            framework_version=pretrained_config.framework_version,
         )
-        predictor = self._deploy_model(model, model_configuration)
-        return DeployedModel(model=model, predictor=predictor)
+        predictor = self._deploy_model(model, deployment_config)
+        return predictor
 
-    def tear_down(self, deployed_model: DeployedModel) -> None:
-        self._logger.info("Tearing down deployed model")
-        deployed_model.predictor.delete_model()
-        deployed_model.predictor.delete_endpoint()
-        self._logger.info("Teardown completed successfully")
+    def tear_down(self, predictor: Predictor) -> None:
+        predictor.delete_model()
+        predictor.delete_endpoint()
 
-    def predict(
-        self, deployed_model: DeployedModel, data: numpy.ndarray
-    ) -> numpy.ndarray:
+    def predict(self, predictor: Predictor, data: numpy.ndarray) -> numpy.ndarray:
         self._logger.info(f"Predicting input: {data}")
         payload = pickle.dumps(data)  # nosec
-        response = deployed_model.predictor.predict(payload)
+        response = predictor.predict(payload)
         predictions = pickle.loads(response)  # nosec
         self._logger.info(f"Prediction completed successfully: {predictions}")
         return predictions

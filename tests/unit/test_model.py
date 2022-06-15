@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import pytest
+from moto.core import patch_client
 
 
 def test__deployment_configuration_initialization():
@@ -10,8 +11,10 @@ def test__deployment_configuration_initialization():
 
 def test__training_configuration_initialization():
     from lib.model import TrainingConfiguration
+    from sagemaker.sklearn import SKLearn
 
     TrainingConfiguration(
+        model_class=SKLearn,
         entry_point="test_file.py",
         source_dir="test/directory",
         instance_type="test instance",
@@ -22,8 +25,10 @@ def test__training_configuration_initialization():
 
 def test__pretrained_configuration_initialization():
     from lib.model import PretrainedConfiguration
+    from sagemaker.sklearn import SKLearnModel
 
     PretrainedConfiguration(
+        model_class=SKLearnModel,
         model_data="test",
         entry_point="test",
         source_dir="test",
@@ -31,30 +36,10 @@ def test__pretrained_configuration_initialization():
     )
 
 
-def test__model_configuration_initialization():
-    from lib.model import (
-        PretrainedConfiguration,
-        TrainingConfiguration,
-        DeploymentConfiguration,
-        ModelConfiguration,
-    )
+def test__create_model_handler(iam_client):
+    from lib.role import RoleHandler, SagemakerRoleConfig
+    from lib.model import ModelHandler
 
-    training_config = TrainingConfiguration(
-        entry_point="test_file.py",
-        source_dir="test/directory",
-        instance_type="test instance",
-        py_version="py3",
-        framework_version="testversion",
-    )
-    pretrained_config = PretrainedConfiguration(
-        model_data="test",
-        entry_point="test",
-        source_dir="test",
-        framework_version="test",
-    )
-    deployment_config = DeploymentConfiguration(memory=4096, concurrency=10)
-    ModelConfiguration(
-        pretrained=pretrained_config,
-        training=training_config,
-        deployment=deployment_config,
-    )
+    patch_client(RoleHandler._iam_client)
+    role_config = SagemakerRoleConfig(name="test_role")
+    model_handler = ModelHandler.create(role_config)
