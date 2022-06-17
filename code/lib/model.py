@@ -5,12 +5,11 @@ import pickle  # nosec
 from .logger import logger
 from dataclasses import dataclass
 from sagemaker.predictor import Predictor
+from sagemaker.model import Model
 from sagemaker.serializers import IdentitySerializer
 from sagemaker.deserializers import BytesDeserializer
 from sagemaker.serverless import ServerlessInferenceConfig
 from .role import RoleHandler, SagemakerRoleConfig
-
-# TODO: change object to Model class
 
 
 @dataclass(frozen=True)
@@ -21,7 +20,7 @@ class DeploymentConfiguration:
 
 @dataclass(frozen=True)
 class TrainingConfiguration:
-    model_class: object
+    model_class: Model
     entry_point: str
     source_dir: str
     instance_type: str
@@ -31,7 +30,7 @@ class TrainingConfiguration:
 
 @dataclass(frozen=True)
 class PretrainedConfiguration:
-    model_class: object
+    model_class: Model
     model_data: str
     entry_point: str
     source_dir: str
@@ -59,7 +58,7 @@ class ModelHandler:
         self._role = self._role_handler.initialize_role(role_config)
 
     def _deploy_model(
-        self, model: object, deployment_config: DeploymentConfiguration
+        self, model: Model, deployment_config: DeploymentConfiguration
     ) -> Predictor:
 
         # deployment configuration

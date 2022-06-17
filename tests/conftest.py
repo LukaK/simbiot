@@ -5,6 +5,7 @@ import pytest
 from moto import mock_iam
 
 
+# TODO: not working without setting environment in pytest.ini
 @pytest.fixture(scope="function")
 def aws_credentials():
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
