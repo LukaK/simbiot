@@ -69,3 +69,15 @@ repos:
         language: ruby
         description: "Best practice linter"
         files: '\.sam\.(yaml|yml)$'
+
+  # pytest hook
+  - repo: local
+    hooks:
+      - id: pytest
+        stages: [push]
+        name: pytest
+        entry: pytest
+        language: system
+        description: "Run pytest"
+        pass_filenames: false
+        always_run: true
