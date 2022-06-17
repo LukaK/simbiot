@@ -9,7 +9,6 @@ Files:
 - sam: aws cloudformation infrastructure files
 
 ### TODO:
-* add pytest hook on push in precommits
 * add sentence encoding support,
 * add sam templates for api gw interface and for event bus interface,
 * add async interface support with sqs

@@ -9,6 +9,8 @@ from lib.model import (
     DeploymentConfiguration,
 )
 
+# TODO: Check if this works with refactored code
+
 test_data = numpy.array([1, 2, 3, 4, 5, 10, 11, 22])
 test_data = test_data.reshape(-1, 1)
 
