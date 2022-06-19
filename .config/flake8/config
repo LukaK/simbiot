@@ -48,7 +48,7 @@ tee = True
 # Provide a comma-separated list of glob patterns to exclude from checks.
 exclude =
     # tests
-    test_*.py
+    # test_*.py
     # git folder
     .git,
     # python cache
@@ -59,6 +59,7 @@ exclude =
     __init__.py,
     # sam build dir
     .aws-sam
+
 # Provide a comma-separate list of glob patterns to include for checks.
 filename =
     *.py
@@ -78,10 +79,9 @@ builtins =
 disable-noqa = False
 
 # Set the maximum length that any line (with some exceptions) may be.
-# max-line-length = 100
+max-line-length = 100
 # Set the maximum allowed McCabe complexity value for a block of code.
-# NOTE: complexity disabled for now, should be taken into account in the future
-# max-complexity = 20
+max-complexity = 20
 # Toggle whether pycodestyle should enforce matching the indentation of the opening bracket’s line.
 # influences E131 and E133
 hang-closing = False
@@ -103,7 +103,7 @@ ignore =
 # Whitespace before ':'
     E203,
 # Line too long
-    E501,
+    # E501,
 # Local variable is assigned to but never used
     F841,
 # Do not use bare 'except'
@@ -118,7 +118,7 @@ select =
     F,
     C
 # Enable off-by-default extensions.
-enable-extensions = 
+enable-extensions =
     SFS
 
 extend-ignore =
