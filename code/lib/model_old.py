@@ -1,13 +1,15 @@
 #!/usr/bin/env python
-import time
 import json
+import pathlib
+import pickle  # nosec
+import time
+from abc import ABC, abstractmethod
+
 import boto3
 import numpy
-import pickle  # nosec
-import pathlib
 import sagemaker
-from abc import ABC, abstractmethod
 from sagemaker.predictor import Predictor
+
 from .logger import Logger
 
 

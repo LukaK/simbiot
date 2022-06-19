@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+
 import boto3
 import pytest
 from moto import mock_iam

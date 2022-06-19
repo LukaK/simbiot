@@ -1,10 +1,12 @@
 #!/usr/bin/env python
-import time
 import json
-import boto3
-from typing import Dict
-from .logger import logger
+import time
 from dataclasses import dataclass, field
+from typing import Dict
+
+import boto3
+
+from .logger import logger
 
 
 @dataclass

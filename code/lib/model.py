@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 from __future__ import annotations
-import numpy
+
 import pickle  # nosec
-from .logger import logger
 from dataclasses import dataclass
-from sagemaker.predictor import Predictor
-from sagemaker.model import Model
-from sagemaker.serializers import IdentitySerializer
+
+import numpy
 from sagemaker.deserializers import BytesDeserializer
+from sagemaker.model import Model
+from sagemaker.predictor import Predictor
+from sagemaker.serializers import IdentitySerializer
 from sagemaker.serverless import ServerlessInferenceConfig
+
+from .logger import logger
 from .role import RoleHandler, SagemakerRoleConfig
 
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 import numpy
-from sagemaker.sklearn import SKLearn, SKLearnModel
-from lib.role import SagemakerRoleConfig
 from lib.model import (
+    DeploymentConfiguration,
     ModelHandler,
     PretrainedConfiguration,
     TrainingConfiguration,
-    DeploymentConfiguration,
 )
+from lib.role import SagemakerRoleConfig
+from sagemaker.sklearn import SKLearn, SKLearnModel
 
 # TODO: Check if this works with refactored code
 

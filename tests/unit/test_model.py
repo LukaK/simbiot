@@ -38,8 +38,8 @@ def test__pretrained_configuration_initialization():
 
 @pytest.mark.slow
 def test__create_model_handler(iam_client):
-    from lib.role import RoleHandler, SagemakerRoleConfig
     from lib.model import ModelHandler
+    from lib.role import RoleHandler, SagemakerRoleConfig
 
     patch_client(RoleHandler._iam_client)
     role_config = SagemakerRoleConfig(name="test_role")

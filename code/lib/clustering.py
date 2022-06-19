@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-from sagemaker.sklearn import SKLearn, SKLearnModel
-from sagemaker.serializers import IdentitySerializer
 from sagemaker.deserializers import BytesDeserializer
+from sagemaker.serializers import IdentitySerializer
 from sagemaker.serverless import ServerlessInferenceConfig
+from sagemaker.sklearn import SKLearn, SKLearnModel
+
 from .model import ModelWrapper, PicklePredictor
 
 

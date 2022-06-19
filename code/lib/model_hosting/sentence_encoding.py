@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+import argparse
 import os
 import pickle  # nosec
-import argparse
+
+import joblib
 import numpy
 from sklearn.cluster import DBSCAN
-import joblib
 
 
 def model_fn(model_dir: str) -> DBSCAN:

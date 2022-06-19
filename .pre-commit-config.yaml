@@ -21,6 +21,12 @@ repos:
       - id: black
         # language_version: python3.7
 
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.7.0
+    hooks:
+    - id: isort
+      args: [--profile, black]
+
   # code linter
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
