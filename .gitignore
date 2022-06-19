@@ -3,3 +3,4 @@ samconfig.toml
 .python-version
 *joblib
 .coverage
+.nlsp-settings
