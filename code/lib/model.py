@@ -103,7 +103,7 @@ class ModelHandler:
     ) -> Predictor:
 
         model = pretrained_config.model_class(
-            model_data=pretrained_config.model_location,
+            model_data=pretrained_config.model_data,
             role=self._role.arn,
             entry_point=pretrained_config.entry_point,
             source_dir=pretrained_config.source_dir,

@@ -37,7 +37,7 @@ deployment_config = DeploymentConfiguration(
     concurrency=10,
 )
 
-model_handler = ModelHandler.create(SagemakerRoleConfig())
+model_handler = ModelHandler.create(SagemakerRoleConfig("MySagemakerRole"))
 
 # deploy models
 predictor = model_handler.train_and_deploy(training_config, deployment_config)
