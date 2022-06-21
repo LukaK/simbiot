@@ -35,7 +35,6 @@ def test__role_handler_retrieve_role_not_exists(iam_client):
         role_handler._retrieve_role(role_config)
 
 
-@pytest.mark.slow
 def test__role_handler_retrieve_role_exists(iam_client):
     from lib.role import RoleHandler, SagemakerRoleConfig
 
@@ -47,7 +46,6 @@ def test__role_handler_retrieve_role_exists(iam_client):
     role_handler._retrieve_role(role_config)
 
 
-@pytest.mark.slow
 def test__role_handler_create_role_not_exists(iam_client):
     from lib.role import RoleHandler, SagemakerRoleConfig
 
@@ -58,7 +56,6 @@ def test__role_handler_create_role_not_exists(iam_client):
     role_handler._create_role(role_config)
 
 
-@pytest.mark.slow
 def test__role_handler_create_role_exists(iam_client):
     from lib.role import RoleHandler, SagemakerRoleConfig
 
@@ -71,7 +68,6 @@ def test__role_handler_create_role_exists(iam_client):
         role_handler._create_role(role_config)
 
 
-@pytest.mark.slow
 def test__role_handler_initialize_role_not_exists(iam_client):
     from lib.role import RoleHandler, SagemakerRole, SagemakerRoleConfig
 
@@ -83,7 +79,6 @@ def test__role_handler_initialize_role_not_exists(iam_client):
     assert isinstance(role, SagemakerRole)
 
 
-@pytest.mark.slow
 def test__role_handler_initialize_role_exists(iam_client):
     from lib.role import RoleHandler, SagemakerRole, SagemakerRoleConfig
 

@@ -9,8 +9,6 @@ from lib.model import (
 from lib.role import SagemakerRoleConfig
 from sagemaker.sklearn import SKLearn, SKLearnModel
 
-# TODO: Check if this works with refactored code
-
 test_data = numpy.array([1, 2, 3, 4, 5, 10, 11, 22])
 test_data = test_data.reshape(-1, 1)
 
@@ -34,7 +32,7 @@ pretrained_config = PretrainedConfiguration(
 
 deployment_config = DeploymentConfiguration(
     memory=4096,
-    concurrency=10,
+    concurrency=3,
 )
 
 model_handler = ModelHandler.create(SagemakerRoleConfig("MySagemakerRole"))

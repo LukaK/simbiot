@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# TODO: implement sentence encoding
 import argparse
 import os
 import pickle  # nosec

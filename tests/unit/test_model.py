@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import pytest
 from moto.core import patch_client
 
 
@@ -36,7 +35,6 @@ def test__pretrained_configuration_initialization():
     )
 
 
-@pytest.mark.slow
 def test__create_model_handler(iam_client):
     from lib.model import ModelHandler
     from lib.role import RoleHandler, SagemakerRoleConfig

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import json
-import time
 from dataclasses import dataclass, field
 from typing import Dict
 
 import boto3
+from retry import retry
 
 from .logger import logger
 
@@ -52,6 +52,7 @@ class RoleHandler:
     _iam_client = boto3.client("iam")
 
     @classmethod
+    @retry(_iam_client.exceptions.NoSuchEntityException, delay=5, tries=2)
     def _retrieve_role(cls, role_config: SagemakerRoleConfig) -> SagemakerRole:
         """Retrieve role details from role configuration
 
@@ -82,6 +83,7 @@ class RoleHandler:
 
         Raises:
             EntityAlreadyExistsException: role allready exists
+            NoSuchEntityException: error during retrieving role
         """
 
         cls._logger.info(f"Creating role: {role_config.name}")
@@ -98,11 +100,7 @@ class RoleHandler:
             PolicyArn=role_config.policy_arn,
         )
 
-        # TODO: Add more robust way of checking the policy creation
-        # wait untill role is created
-        time.sleep(5)
-        cls._logger.info("Role created successfully.")
-        return SagemakerRole(arn=role_arn, config=role_config)
+        return cls._retrieve_role(role_config)
 
     @classmethod
     def initialize_role(cls, role_config: SagemakerRoleConfig) -> SagemakerRole:
@@ -122,7 +120,10 @@ class RoleHandler:
 
         try:
             return cls._create_role(role_config)
-        except cls._iam_client.exceptions.EntityAlreadyExistsException:
+        except (
+            cls._iam_client.exceptions.EntityAlreadyExistsException,
+            cls._iam_client.exceptions.NoSuchEntityException,
+        ):
             cls._logger.error("Role already exists")
             raise RoleHandlerException(
                 role_config=role_config,

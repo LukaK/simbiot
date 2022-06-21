@@ -24,3 +24,4 @@ nltk
 gensim
 scikit-learn
 boto3
+retry
