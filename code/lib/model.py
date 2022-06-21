@@ -48,7 +48,6 @@ class PicklePredictor(Predictor):
 
 
 class ModelHandler:
-    _logger = logger
     _role_handler = RoleHandler()
 
     @staticmethod
@@ -117,9 +116,9 @@ class ModelHandler:
         predictor.delete_endpoint()
 
     def predict(self, predictor: Predictor, data: numpy.ndarray) -> numpy.ndarray:
-        self._logger.info(f"Predicting input: {data}")
+        logger.info(f"Predicting input: {data}")
         payload = pickle.dumps(data)  # nosec
         response = predictor.predict(payload)
         predictions = pickle.loads(response)  # nosec
-        self._logger.info(f"Prediction completed successfully: {predictions}")
+        logger.info(f"Prediction completed successfully: {predictions}")
         return predictions

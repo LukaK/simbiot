@@ -48,7 +48,6 @@ class RoleHandlerException(Exception):
 
 class RoleHandler:
 
-    _logger = logger
     _iam_client = boto3.client("iam")
 
     @classmethod
@@ -66,9 +65,9 @@ class RoleHandler:
             NoSuchEntityException: role does not exists
         """
 
-        cls._logger.info(f"Retrieving role: {role_config.name}")
+        logger.info(f"Retrieving role: {role_config.name}")
         role_arn = cls._iam_client.get_role(RoleName=role_config.name)["Role"]["Arn"]
-        cls._logger.info("Role retrieved successfully")
+        logger.info("Role retrieved successfully")
         return SagemakerRole(arn=role_arn, config=role_config)
 
     @classmethod
@@ -86,7 +85,7 @@ class RoleHandler:
             NoSuchEntityException: error during retrieving role
         """
 
-        cls._logger.info(f"Creating role: {role_config.name}")
+        logger.info(f"Creating role: {role_config.name}")
 
         # create role
         role_arn = cls._iam_client.create_role(
@@ -116,7 +115,7 @@ class RoleHandler:
         try:
             return cls._retrieve_role(role_config)
         except cls._iam_client.exceptions.NoSuchEntityException:
-            cls._logger.info("Role does not exists")
+            logger.info("Role does not exists")
 
         try:
             return cls._create_role(role_config)
@@ -124,7 +123,7 @@ class RoleHandler:
             cls._iam_client.exceptions.EntityAlreadyExistsException,
             cls._iam_client.exceptions.NoSuchEntityException,
         ):
-            cls._logger.error("Role already exists")
+            logger.error("Role already exists")
             raise RoleHandlerException(
                 role_config=role_config,
                 message=f"Unexpected error during initialization of the role: {role_config}",
